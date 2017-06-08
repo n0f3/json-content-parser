@@ -34,3 +34,32 @@ export const signIn = () => {
 export const signOut = () => {
   gapi.auth2.getAuthInstance().signOut();
 };
+
+export const createSpreadSheet = () => {
+  const request = {
+    resource: {
+      properties: {
+        title: 'JSON Content Parser',
+        locale: 'en'
+      },
+      sheets: [{
+        properties: {
+          title: 'Data',
+          gridProperties: {
+            rowCount: 2,
+            columnCount: 2,
+          },
+        },
+      }],
+    }
+  };
+  return gapi.client.sheets.spreadsheets.create(request).then((res) => res.result);
+};
+
+export const getSpreadhSheet = (spreadsheetId) => {
+  const request = {
+    spreadsheetId,
+    includeGridData: true,
+  };
+  return gapi.client.sheets.spreadsheets.get(request).then((res) => res.result);
+};
