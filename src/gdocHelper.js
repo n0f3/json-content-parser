@@ -21,6 +21,15 @@ const initClient = (onAuthChange) => {
     });
 }; 
 
+const getUpdateRequest = ([{updateKind, updateObj}]) => {
+  const request = {};
+  console.log([...arguments]);
+  [...arguments].forEach((arg) => {
+    request[arg.updateKind] = arg.updateObj;
+  });
+  return request;
+};
+
 export const loadAPI = (authChange) => {
   gapi.load('client:auth2', () => {
     initClient(authChange);
@@ -35,22 +44,14 @@ export const signOut = () => {
   gapi.auth2.getAuthInstance().signOut();
 };
 
-export const createSpreadSheet = () => {
+export const createSpreadSheet = (sheetProps) => {
   const request = {
     resource: {
       properties: {
         title: 'JSON Content Parser',
         locale: 'en'
       },
-      sheets: [{
-        properties: {
-          title: 'Data',
-          gridProperties: {
-            rowCount: 2,
-            columnCount: 2,
-          },
-        },
-      }],
+      sheets: [sheetProps],
     }
   };
   return gapi.client.sheets.spreadsheets.create(request).then((res) => res.result);
@@ -62,4 +63,32 @@ export const getSpreadhSheet = (spreadsheetId) => {
     includeGridData: true,
   };
   return gapi.client.sheets.spreadsheets.get(request).then((res) => res.result);
+};
+
+export const updateSpreadsheetGrid = (spreadsheetId, sheetId, sheetTitle, rowCount, columnCount) => {
+  const updateRequest = {
+    updateSheetProperties: {
+      properties: {
+        sheetId,
+        title: sheetTitle,
+        gridProperties: {
+          rowCount,
+          columnCount,
+        },
+      },
+      fields: '*',
+    }
+  };
+  console.log(updateRequest);
+  const request = {
+    requests: [updateRequest],
+    includeSpreadsheetInResponse: true,
+    spreadsheetId,
+  }
+  return gapi.client.sheets.spreadsheets.batchUpdate(request)
+    .then((res) => res.result, (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
 };
