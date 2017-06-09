@@ -92,7 +92,9 @@ class App extends Component {
     } else {
       this.setState(Object.assign({}, this.state, {
         isSignedIn,
-        spreadsheet: null,
+        spreadsheet: {
+          id: null,
+        },
       }));
     }
   };
@@ -165,6 +167,7 @@ class App extends Component {
           <img src={logo} className="App-logo" alt="logo" />
           <h2>Welcome to React</h2>
         </div>
+        <div>
         { 
           !this.state.isSignedIn &&
           <button onClick={this.handleGoogleSignIn}>
@@ -177,12 +180,15 @@ class App extends Component {
             Sign Out
           </button>
         }
+        </div>
+        <div>
         {
           this.state.spreadsheet.id &&
           this.state.isSignedIn &&
           <iframe src={this.state.spreadsheet.spreadsheetUrl} frameBorder="1" headers={false} title='gdoc' width='1000' height='500'>
           </iframe>
         }
+        </div>
       </div>
     );
   }
