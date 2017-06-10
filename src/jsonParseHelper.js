@@ -1,32 +1,28 @@
 export default (jsonObject) => {
   if (jsonObject) {
-      const columns = new Set();
-      const rows = Object.keys(jsonObject);
-      
-      rows.forEach((key) => {
-        const values = jsonObject[key];
-        if (values) {
-          values.forEach((val) => {
-            columns.add(val);
-          });
-        }
-      });
-      
-      const dataSheet = [];
-      dataSheet.push(['', ...columns.values()]);
-      let rowData = [];
-      rows.forEach((row) => {
-        rowData.push(row);
-        [...columns.values()].forEach((column) => {
-          if (jsonObject[row].find((val) => val === column)) {
-            rowData.push(1);
-          } else {
-            rowData.push(0);
-          }
-        });
-        dataSheet.push(rowData);
-        rowData = [];
-      });
-      return dataSheet;
-    }
+    const rows = Object.keys(jsonObject);
+    const columns = [
+      ...new Set(rows.map(
+        key => jsonObject[key]
+        ).reduce((acc, val) => acc.concat(...val))
+      )
+    ];
+    const dataSheet = [[
+      '',
+      ...columns
+    ]];
+    let rowData = [];
+    rows.forEach((row) => {
+      // adding initial row name identifier
+      rowData.push(row);
+      // filling rest of array with 0
+      rowData.fill(0, 1, columns.length);
+      rowData.push(...columns.map((column) => jsonObject[row].includes(column) ?
+        1 : 0));
+      dataSheet.push(rowData);
+      rowData = [];
+    });
+    console.table(dataSheet);
+    return dataSheet;
+  }
 };
