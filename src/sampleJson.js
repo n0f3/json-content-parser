@@ -20,7 +20,7 @@ const sampleJsonData = {
     "change_classes",
     "add_classes",
     "delete_classes"
-  ]
+  ],
 };
 
 export default sampleJsonData;
