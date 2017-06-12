@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
 import { loadAPI, signIn, signOut, createSpreadSheet, getSpreadhSheet, updateSpreadsheetGrid } from './gdocHelper';
 import sampleData from './sampleJson';
 import parseJson from './jsonParseHelper';
@@ -19,6 +17,8 @@ class App extends Component {
       sheetData: {
         data: [],
       },
+      jsonObj: null,
+      errorMessage: null,
     };
   }
 
@@ -110,6 +110,42 @@ class App extends Component {
     signOut();
   };
 
+  handleJsonFileUploadClick = (e) => {
+    if (this.jsonInput) {
+      this.jsonInput.click();
+    }
+    e.preventDefault();
+  };
+
+  handleJsonUpload = (e) => {
+    const files = e.target.files;
+    if (files) {
+      const fileUploaded = files[0];
+      console.log(`received file ${fileUploaded.name} of type ${fileUploaded.type}`);
+      if (fileUploaded) {
+        const fileReader = new FileReader();
+        fileReader.onload = (event) => {
+          const jsonData = event.target.result;
+          try {
+            const jsonObj = JSON.parse(jsonData);
+            this.setState({
+              ...this.state,
+              jsonObj,
+              errorMessage: null,
+            });
+          } catch (error) {
+            this.setState({
+              ...this.state,
+              jsonObj: null,
+              errorMessage: `${error.name}: ${error.message}`,
+            });
+          }
+        };
+        fileReader.readAsText(fileUploaded);
+      }
+    }
+  };
+
   componentDidMount() {
     if (localStorage.getItem('spreadsheetId')) {
       const spreadsheetId = localStorage.getItem('spreadsheetId');
@@ -131,10 +167,6 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <div className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h2>Welcome to React</h2>
-        </div>
         <div>
         { 
           !this.state.isSignedIn &&
@@ -150,11 +182,40 @@ class App extends Component {
         }
         </div>
         <div>
+          <input 
+            type='file'
+            style={{display: 'none'}}
+            ref={(e) => {
+              this.jsonInput = e;
+            }}
+            onChange={this.handleJsonUpload}
+            accept='.json'/>
+          <button onClick={this.handleJsonFileUploadClick}>
+            Upload Json File
+          </button>
+        </div>
+        <div align='center'>
+        {
+          this.state.jsonObj &&
+          <div style={{'text-align': 'left', display: 'inline-block'}}>
+            <h3>Json File Uploaded</h3>
+            <pre>
+              { JSON.stringify(this.state.jsonObj, null, 2) }
+            </pre>
+          </div>
+        }
         {
           this.state.spreadsheet.id &&
           this.state.isSignedIn &&
-          <iframe src={this.state.spreadsheet.spreadsheetUrl} frameBorder="1" headers={false} title='gdoc' width='1000' height='500'>
-          </iframe>
+          <div style={{display: 'inline-block'}}>
+            <iframe 
+              src={this.state.spreadsheet.spreadsheetUrl} frameBorder="1" 
+              headers={false} 
+              title='gdoc' 
+              width='800' 
+              height='500'>
+            </iframe>
+          </div>
         }
         </div>
       </div>
