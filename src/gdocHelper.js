@@ -19,16 +19,24 @@ const initClient = (onAuthChange) => {
         console.log(`Error: ${reason.result.error.message}`);
       }
     });
-}; 
-
-const getUpdateRequest = ([{updateKind, updateObj}]) => {
-  const request = {};
-  console.log([...arguments]);
-  [...arguments].forEach((arg) => {
-    request[arg.updateKind] = arg.updateObj;
-  });
-  return request;
 };
+
+const processSheetData = (sheetData) => 
+  sheetData.map((row) => ({
+    values: row.map((col) => {
+      const type = typeof(col);
+      // default to string
+      let typeValue = 'stringValue';
+      if (type === 'string' || type === 'number') {
+        typeValue = `${type}Value`;
+      }
+      return {
+        userEnteredValue: {
+          [typeValue]: col,
+        },
+      }
+    })
+  }));
 
 export const loadAPI = (authChange) => {
   gapi.load('client:auth2', () => {
@@ -44,14 +52,23 @@ export const signOut = () => {
   gapi.auth2.getAuthInstance().signOut();
 };
 
-export const createSpreadSheet = (sheetProps) => {
+export const createSpreadSheet = (sheetTitle, startRow = 0, startColumn = 0, sheetData) => {
   const request = {
     resource: {
       properties: {
         title: 'JSON Content Parser',
         locale: 'en'
       },
-      sheets: [sheetProps],
+      sheets: [{
+        properties: {
+          title: sheetTitle,
+        },
+        data: [{
+          startRow,
+          startColumn,
+          rowData: processSheetData(sheetData),
+        }],
+      }],
     }
   };
   return gapi.client.sheets.spreadsheets.create(request).then((res) => res.result);
@@ -65,30 +82,45 @@ export const getSpreadhSheet = (spreadsheetId) => {
   return gapi.client.sheets.spreadsheets.get(request).then((res) => res.result);
 };
 
-export const updateSpreadsheetGrid = (spreadsheetId, sheetId, sheetTitle, rowCount, columnCount) => {
-  const updateRequest = {
-    updateSheetProperties: {
-      properties: {
-        sheetId,
-        title: sheetTitle,
-        gridProperties: {
-          rowCount,
-          columnCount,
-        },
-      },
-      fields: '*',
-    }
+export const updateCells = (sheetData, sheetId) => ({
+  updateCells: {
+    rows: processSheetData(sheetData),
+    fields: '*',
+    start: {
+      sheetId,
+      rowIndex: 0,
+      columnIndex: 0,
+    },
+  },
+});
+
+export const deleteRange = (sheetId, startRowIndex, endRowIndex = null, startColumnIndex, endColumnIndex = null, shiftDimension) => {
+  const range = {
+    sheetId,
+    startRowIndex,
+    startColumnIndex,
   };
-  console.log(updateRequest);
-  const request = {
-    requests: [updateRequest],
-    includeSpreadsheetInResponse: true,
-    spreadsheetId,
+  if (endRowIndex) {
+    range.endRowIndex = endRowIndex;
   }
-  return gapi.client.sheets.spreadsheets.batchUpdate(request)
-    .then((res) => res.result, (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+  if (endColumnIndex) {
+    range.endColumnIndex = endColumnIndex;
+  }
+  return {
+    deleteRange: {
+      range,
+      shiftDimension
+    },
+  }
 };
+
+export const batchUpdate = (requests, spreadsheetId, includeSpreadsheetInResponse = true) => 
+  gapi.client.sheets.spreadsheets.batchUpdate({
+    requests,
+    spreadsheetId,
+    includeSpreadsheetInResponse
+  }).then((res) => res.result, (err) => {
+    if (err) {
+      console.error(err);
+    }
+  });
